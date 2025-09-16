@@ -15,7 +15,7 @@ export function PostCoverImage({ imageProps, linkProps }: PostCoverImageProps) {
       'overflow-hidden', 
       'rounded-xl', 
       linkProps.className
-      )} href="#">
+      )}>
       <Image
         {...imageProps}
         className={clsx(
