@@ -36,8 +36,17 @@ try {
   assert.match(article, /O Next.js também é uma boa escolha/);
   assert.match(article, /property="og:type" content="article"/);
   assert.match(article, /rel="canonical"/);
-  await page("/post/missing-post", 404);
-  await page("/post/como-a-tecnologia-impacta-nosso-bem-estar", 404);
+  const statuses = {};
+  const expectedStatuses = {};
+  for (const agent of ["Mozilla/5.0", "Twitterbot"]) {
+    for (const path of ["/post/missing-post", "/post/como-a-tecnologia-impacta-nosso-bem-estar", "/?page=999"]) {
+      const response = await fetch(new URL(path, origin), { headers: { "user-agent": agent } });
+      await response.arrayBuffer();
+      statuses[`${agent} ${path}`] = response.status;
+      expectedStatuses[`${agent} ${path}`] = 404;
+    }
+  }
+  assert.deepEqual(statuses, expectedStatuses, "Posts indisponíveis e páginas inexistentes devem responder 404 para navegadores e bots.");
 
   const sitemap = await page("/sitemap.xml");
   assert.match(sitemap, /rotina-matinal-de-pessoas-altamente-eficazes/);
