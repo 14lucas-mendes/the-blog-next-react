@@ -11,7 +11,7 @@ export class DrizzlePostRepository implements PostRepository {
       columns: { content: false },
       orderBy: (posts, { desc }) => [desc(posts.createdAt), desc(posts.id)],
       where: (posts, { eq }) => eq(posts.published, true),
-      limit,
+      limit: limit ?? (offset > 0 ? Number.MAX_SAFE_INTEGER : undefined),
       offset,
     });
   }

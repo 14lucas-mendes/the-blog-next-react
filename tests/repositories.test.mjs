@@ -32,6 +32,7 @@ test("public queries exclude drafts, paginate deterministically and omit article
     assert.deepEqual(second.map((item) => item.id), ["1"]);
     assert.equal(Object.hasOwn(first[0], "content"), false);
     assert.equal((await repo.findAll()).length, 4);
+    assert.deepEqual((await repo.findAllPublic({ offset: 1 })).map((item) => item.id), ["3", "1"]);
   });
 });
 

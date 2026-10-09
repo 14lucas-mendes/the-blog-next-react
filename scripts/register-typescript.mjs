@@ -1,10 +1,10 @@
-import { createRequire, registerHooks } from "node:module";
+import { registerHooks } from "node:module";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import ts from "typescript";
 
 const sourceRoot = new URL("../src/", import.meta.url);
-const require = createRequire(import.meta.url);
+const nextEntrypoints = new Set(["next/link", "next/image", "next/navigation"]);
 
 function resolveSource(url) {
   const path = fileURLToPath(url);
@@ -15,8 +15,8 @@ function resolveSource(url) {
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
-    if (specifier.startsWith("next/")) {
-      return { url: pathToFileURL(require.resolve(specifier)).href, shortCircuit: true };
+    if (nextEntrypoints.has(specifier)) {
+      return nextResolve(`${specifier}.js`, context);
     }
     let source;
     if (specifier.startsWith("@/")) {
