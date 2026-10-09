@@ -38,11 +38,12 @@ Configure o mesmo caminho na aplicação Next.js. O diretório pai deve existir.
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript |
 | `npm test` | Testes de migrations, repositórios, seed e fluxos públicos |
+| `npm run smoke` | Verificar o servidor de produção após build e seed |
 | `npm run db:generate` | Gerar novas migrations após editar o schema |
 | `npm run db:migrate` | Aplicar migrations pendentes |
 | `npm run db:seed` | Inserir posts de exemplo sem sobrescrever registros |
 
-Os testes usam o runner do Node e um carregador TypeScript para executar os mesmos módulos usados pela aplicação. Testes de repositório e seed usam bancos temporários. O CI executa lint, TypeScript, testes, migrations, seed e build.
+Os testes usam o runner do Node e um carregador TypeScript para executar os mesmos módulos usados pela aplicação. Testes de repositório e seed usam bancos temporários. O CI executa lint, TypeScript, testes, migrations, seed, build e verificações HTTP de home, artigo, 404, rascunhos, SEO e otimização de imagem.
 
 ## Estrutura
 
@@ -86,4 +87,5 @@ A leitura dos posts ocorre a cada requisição, para refletir alterações no SQ
 - Markdown com `remark-gfm` e `rehype-sanitize`, incluindo tabelas com rolagem horizontal.
 - Estilos de leitura no modo escuro e imagens com tamanhos responsivos.
 - Next.js e React em versões com correções de segurança; mantenha o lockfile e as dependências atualizados.
+- Overrides de PostCSS e Sharp atualizam dependências transitivas ainda fixadas em versões antigas pelo Next.js 15. O smoke de produção verifica a otimização de imagens com essas versões.
 
