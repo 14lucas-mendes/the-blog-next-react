@@ -1,14 +1,9 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { postsTable } from "./schemas";
-import Database from "better-sqlite3";
-import { resolve } from "path";
+import { resolve } from "node:path";
+import { createDatabase } from "./connection";
 
-const sqliteDataBasePath = resolve(process.cwd(), "db.sqlite3");
-const sqliteDataBase = new Database(sqliteDataBasePath);
+const databasePath = resolve(process.env.DATABASE_PATH ?? "db.sqlite3");
+const { sqlite, db } = createDatabase(databasePath);
 
-export const drizzleDb = drizzle(sqliteDataBase, {
-  schema: {
-    posts: postsTable,
-  },
-  logger: true,
-});
+export const sqliteDatabase = sqlite;
+export const drizzleDb = db;
+

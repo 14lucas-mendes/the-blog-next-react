@@ -11,7 +11,7 @@ export function SafeMarkdown({ markdown }: SafeMarkdownProps) {
   return (
     <div
       className={clsx(
-        "prose prose-slate",
+        "prose prose-slate dark:prose-invert",
         "w-full max-w-none",
         "overflow-hidden",
         "prose-a:transition",
@@ -44,3 +44,4 @@ export function SafeMarkdown({ markdown }: SafeMarkdownProps) {
     </div>
   );
 }
+
