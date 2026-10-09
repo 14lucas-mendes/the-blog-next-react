@@ -56,7 +56,8 @@ test("public page queries keep full and final pages and reject pages beyond the 
     db.insert(postsTable).values([
       ...Array.from({ length: 11 }, (_, index) => post(String(index))), post("draft", false),
     ]).run();
-    const queries = createPostQueries(new DrizzlePostRepository(db));
+    const missing = new Error("Not found");
+    const queries = createPostQueries(new DrizzlePostRepository(db), () => { throw missing; });
     const first = await queries.findPublicPostPageCached(1);
     const last = await queries.findPublicPostPageCached(2);
     assert.equal(first.posts.length, 10);
@@ -65,7 +66,7 @@ test("public page queries keep full and final pages and reject pages beyond the 
     assert.equal(last.hasNextPage, false);
     assert.equal(new Set([...first.posts, ...last.posts].map((item) => item.id)).size, 11);
     assert.equal(Object.hasOwn(first.posts[0], "content"), false);
-    await assert.rejects(queries.findPublicPostPageCached(3), (error) => error.digest === "NEXT_HTTP_ERROR_FALLBACK;404");
+    await assert.rejects(queries.findPublicPostPageCached(3), (error) => error === missing);
   } finally {
     sqlite.close();
   }

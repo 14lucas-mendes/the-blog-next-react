@@ -75,7 +75,7 @@ A versão anterior associava conteúdo e data à mesma coluna. Texto que nunca f
 
 ## SEO e publicação
 
-Configure `SITE_URL` com a URL pública real **antes do build de produção** e mantenha a variável na inicialização do servidor. Em produção, sua ausência interrompe o build ou a inicialização com uma mensagem explícita. O padrão `http://localhost:3000` é usado em desenvolvimento. A URL deve usar HTTP ou HTTPS. Essa configuração alimenta canonical, Open Graph, Twitter cards, `/sitemap.xml` e `/robots.txt`.
+Configure `SITE_URL` com a URL pública real **antes do build de produção** e mantenha o mesmo valor ao executar o servidor. Em produção, sua ausência interrompe o build com uma mensagem explícita. Se a variável faltar apenas na execução, `next start` pode anunciar que está pronto, mas as páginas e o sitemap falham com HTTP 500 ao carregar seus módulos na primeira requisição. O `/robots.txt` é gerado no build e mantém a URL usada naquela etapa. Verifique a resposta da home para confirmar que a aplicação está saudável. O padrão `http://localhost:3000` é usado em desenvolvimento. A URL deve usar HTTP ou HTTPS. Essa configuração alimenta canonical, Open Graph, Twitter cards, `/sitemap.xml` e `/robots.txt`.
 
 `DATABASE_PATH` deve apontar para um arquivo em armazenamento persistente, acessível ao processo Node. Para servidores com várias réplicas ou ambientes com sistema de arquivos efêmero, planeje um banco compartilhado antes de publicar. A aplicação usa o runtime Node; o driver SQLite nativo não funciona no Edge Runtime.
 
@@ -93,7 +93,6 @@ A leitura dos posts ocorre a cada requisição, para refletir alterações no SQ
 ## Interface e segurança
 
 - Idioma `pt-BR`, região principal de conteúdo e link para pular o cabeçalho.
-- Carregamento anunciado a leitores de tela e respeito à preferência por menos movimento.
 - Markdown com `remark-gfm` e `rehype-sanitize`, incluindo tabelas com rolagem horizontal.
 - Estilos de leitura no modo escuro e imagens com tamanhos responsivos.
 - Next.js e React em versões com correções de segurança; mantenha o lockfile e as dependências atualizados.
