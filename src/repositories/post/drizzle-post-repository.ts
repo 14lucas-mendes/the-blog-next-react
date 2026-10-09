@@ -1,10 +1,9 @@
 import type { PostModel, PostSummaryModel } from "@/models/post/post-model";
 import type { BlogDatabase } from "@/db/drizzle/connection";
 import type { PostRepository, PublicPostPagination } from "./post-repository";
-import { drizzleDb } from "@/db/drizzle";
 
 export class DrizzlePostRepository implements PostRepository {
-  constructor(private readonly db: BlogDatabase = drizzleDb) {}
+  constructor(private readonly db: BlogDatabase) {}
 
   async findAllPublic({ limit, offset = 0 }: PublicPostPagination = {}): Promise<PostSummaryModel[]> {
     return this.db.query.posts.findMany({

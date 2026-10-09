@@ -6,6 +6,7 @@ import { createDatabase } from "../src/db/drizzle/connection.ts";
 import { postsTable } from "../src/db/drizzle/schemas.ts";
 import { DrizzlePostRepository } from "../src/repositories/post/drizzle-post-repository.ts";
 import { JsonPostRepository } from "../src/repositories/post/json-post-repository.ts";
+import { createPostQueries } from "../src/lib/post/create-post-queries.ts";
 
 const post = (id, published = true) => ({
   id, slug: `post-${id}`, title: `Post ${id}`, author: "Author", excerpt: "Summary",
@@ -46,6 +47,28 @@ test("reading a post preserves its body and date and treats absence as undefined
     assert.equal(await repo.findById("missing"), undefined);
     assert.equal((await repo.findById("2")).published, false);
   });
+});
+
+test("public page queries keep full and final pages and reject pages beyond the last", async () => {
+  const { sqlite, db } = createDatabase(":memory:");
+  try {
+    migrate(db, { migrationsFolder: resolve("src/db/drizzle/migrations") });
+    db.insert(postsTable).values([
+      ...Array.from({ length: 11 }, (_, index) => post(String(index))), post("draft", false),
+    ]).run();
+    const queries = createPostQueries(new DrizzlePostRepository(db));
+    const first = await queries.findPublicPostPageCached(1);
+    const last = await queries.findPublicPostPageCached(2);
+    assert.equal(first.posts.length, 10);
+    assert.equal(first.hasNextPage, true);
+    assert.equal(last.posts.length, 1);
+    assert.equal(last.hasNextPage, false);
+    assert.equal(new Set([...first.posts, ...last.posts].map((item) => item.id)).size, 11);
+    assert.equal(Object.hasOwn(first.posts[0], "content"), false);
+    await assert.rejects(queries.findPublicPostPageCached(3), (error) => error.digest === "NEXT_HTTP_ERROR_FALLBACK;404");
+  } finally {
+    sqlite.close();
+  }
 });
 
 test("JSON and SQLite repositories agree on access to drafts and missing posts", async () => {

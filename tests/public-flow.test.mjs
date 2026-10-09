@@ -4,38 +4,35 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { PostFeatured } from "../src/components/PostFeatured/index.tsx";
 import SpinLoader from "../src/components/SpinLoader/index.tsx";
 import { SafeMarkdown } from "../src/components/SafeMarkdown/index.tsx";
-import { findPostBySlugCached } from "../src/lib/post/queries.ts";
-import { postRepository } from "../src/repositories/post/index.tsx";
+import { createPostQueries } from "../src/lib/post/create-post-queries.ts";
+import { JsonPostRepository } from "../src/repositories/post/json-post-repository.ts";
 import { getPageNumber } from "../src/utils/pagination.ts";
-import HomePage from "../src/app/page.tsx";
+import { HomePosts } from "../src/components/HomePosts/index.tsx";
 
 test("the featured component safely handles absence of a post", () => {
   assert.equal(renderToStaticMarkup(PostFeatured({})), "");
 });
 
 test("an empty database renders the home page with a helpful empty state", async () => {
-  const original = postRepository.findAllPublic;
-  postRepository.findAllPublic = async () => [];
-  try {
-    const page = await HomePage({ searchParams: Promise.resolve({}) });
-    const content = await page.props.children.type(page.props.children.props);
-    assert.match(renderToStaticMarkup(content), /Nenhuma publicação encontrada/);
-  } finally {
-    postRepository.findAllPublic = original;
-  }
+  const repository = new JsonPostRepository();
+  repository.findAllPublic = async () => [];
+  const queries = createPostQueries(repository);
+  const data = await queries.findPublicPostPageCached(1);
+  assert.match(renderToStaticMarkup(HomePosts({ ...data, page: 1 })), /Nenhuma publicação encontrada/);
+  await assert.rejects(queries.findPublicPostPageCached(2), (error) => error.digest === "NEXT_HTTP_ERROR_FALLBACK;404");
 });
 
 test("query errors propagate while an absent post follows the 404 path", async () => {
-  const original = postRepository.findBySlugPublic;
-  try {
-    const failure = new Error("Database unavailable");
-    postRepository.findBySlugPublic = async () => { throw failure; };
-    await assert.rejects(findPostBySlugCached("existing"), (error) => error === failure);
-    postRepository.findBySlugPublic = async () => undefined;
-    await assert.rejects(findPostBySlugCached("missing"), (error) => error.digest === "NEXT_HTTP_ERROR_FALLBACK;404");
-  } finally {
-    postRepository.findBySlugPublic = original;
-  }
+  const failure = new Error("Database unavailable");
+  const repository = new JsonPostRepository();
+  repository.findBySlugPublic = async () => { throw failure; };
+  repository.findAllPublic = async () => { throw failure; };
+  const queries = createPostQueries(repository);
+  await assert.rejects(queries.findPostBySlugCached("existing"), (error) => error === failure);
+  await assert.rejects(queries.findPublicPostPageCached(1), (error) => error === failure);
+  const publicQueries = createPostQueries(new JsonPostRepository());
+  await assert.rejects(publicQueries.findPostBySlugCached("missing"), (error) => error.digest === "NEXT_HTTP_ERROR_FALLBACK;404");
+  await assert.rejects(publicQueries.findPublicPostPageCached(999), (error) => error.digest === "NEXT_HTTP_ERROR_FALLBACK;404");
 });
 
 test("pagination accepts positive integers and rejects unsafe or malformed values", () => {

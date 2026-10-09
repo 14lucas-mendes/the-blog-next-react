@@ -43,7 +43,7 @@ Configure o mesmo caminho na aplicação Next.js. O diretório pai deve existir.
 | `npm run db:migrate` | Aplicar migrations pendentes |
 | `npm run db:seed` | Inserir posts de exemplo sem sobrescrever registros |
 
-Os testes usam o runner do Node e um carregador TypeScript para executar os mesmos módulos usados pela aplicação. Testes de repositório e seed usam bancos temporários. O CI executa lint, TypeScript, testes, migrations, seed, build e verificações HTTP de home, artigo, 404, rascunhos, SEO e otimização de imagem.
+Os testes usam o runner do Node e um carregador TypeScript para executar os mesmos módulos usados pela aplicação. Os testes injetam repositórios isolados, sem alterar o singleton da aplicação nem criar o banco padrão. O CI executa lint, TypeScript, testes, migrations, seed, build e verificações HTTP de home, artigo, 404, rascunhos, paginação, SEO e otimização de imagem. O smoke usa um backup temporário do banco para verificar também uma home vazia com HTTP 200 e falhas de banco com HTTP 500, sem modificar o arquivo original. Os status são verificados para navegadores e bots.
 
 ## Estrutura
 
@@ -57,21 +57,31 @@ Os testes usam o runner do Node e um carregador TypeScript para executar os mesm
 
 A página inicial mostra até dez publicações por página e um destaque na primeira. As consultas dos cards omitem o corpo do artigo. As rotas públicas filtram rascunhos; consultas por ID na camada de repositório podem retornar rascunhos e não devem ser expostas sem autorização em um futuro painel administrativo.
 
-Um post ausente resulta em 404. Falhas de banco são propagadas à tela de erro, que oferece uma tentativa de recuperação. A página inicial suporta um banco sem publicações.
+Posts ausentes, rascunhos e páginas de paginação sem resultados respondem HTTP 404 para navegadores e bots. As consultas terminam antes de iniciar a resposta das páginas. Falhas de banco são propagadas à tela de erro, que oferece uma tentativa de recuperação. A primeira página de um banco sem publicações continua respondendo HTTP 200 com uma mensagem de estado vazio.
 
 ## Banco existente e migrations
 
 Faça backup do banco antes de aplicar migrations em produção. A migration `0001_add_post_content` adiciona uma coluna `content` independente de `created_at`, sem apagar os posts ou modificar suas datas, e cria um índice para as listagens públicas.
 
+Ao atualizar uma instalação da versão anterior:
+
+1. Pare a aplicação e faça backup do SQLite antes de atualizar o checkout. O antigo `db.sqlite3` versionado foi removido; preserve o banco usado pela instalação fora do repositório antes de executar `git pull`.
+2. Configure `DATABASE_PATH` para esse arquivo persistente, tanto nos comandos de migration quanto no processo da aplicação.
+3. Atualize o código, execute `npm ci` e aplique `npm run db:migrate` com esse caminho. Uma instalação nova também precisa das migrations: criar um arquivo SQLite não cria o schema automaticamente.
+4. Execute o seed apenas se desejar os posts de exemplo. Ele não restaura conteúdo perdido nem sobrescreve posts existentes.
+5. Configure `SITE_URL`, execute o build e reinicie a aplicação. Verifique a home, um artigo publicado e a resposta 404 de um slug ausente.
+
 A versão anterior associava conteúdo e data à mesma coluna. Texto que nunca foi armazenado não pode ser recuperado por uma migration: posts existentes recebem conteúdo vazio e precisam ser restaurados da fonte original. O seed não sobrescreve registros existentes.
 
 ## SEO e publicação
 
-Configure `SITE_URL` com a URL pública real **antes do build de produção**. O padrão `http://localhost:3000` serve ao desenvolvimento. Essa configuração alimenta canonical, Open Graph, Twitter cards, `/sitemap.xml` e `/robots.txt`.
+Configure `SITE_URL` com a URL pública real **antes do build de produção** e mantenha a variável na inicialização do servidor. Em produção, sua ausência interrompe o build ou a inicialização com uma mensagem explícita. O padrão `http://localhost:3000` é usado em desenvolvimento. A URL deve usar HTTP ou HTTPS. Essa configuração alimenta canonical, Open Graph, Twitter cards, `/sitemap.xml` e `/robots.txt`.
 
 `DATABASE_PATH` deve apontar para um arquivo em armazenamento persistente, acessível ao processo Node. Para servidores com várias réplicas ou ambientes com sistema de arquivos efêmero, planeje um banco compartilhado antes de publicar. A aplicação usa o runtime Node; o driver SQLite nativo não funciona no Edge Runtime.
 
 ```bash
+export SITE_URL=https://seu-blog.example
+export DATABASE_PATH=/caminho/persistente/blog.sqlite3
 npm run db:migrate
 npm run db:seed # opcional em produção
 npm run build

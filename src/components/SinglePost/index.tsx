@@ -1,16 +1,14 @@
-import { findPostBySlugCached } from "@/lib/post/queries";
+import type { PostModel } from "@/models/post/post-model";
 import Image from "next/image";
 import { PostHeading } from "../PostHeading";
 import { PostDate } from "../PostDate";
 import { SafeMarkdown } from "../SafeMarkdown";
 
 type SinglePostProps = {
-  slug: string;
+  post: PostModel;
 };
 
-export async function SinglePost({ slug }: SinglePostProps) {
-  const post = await findPostBySlugCached(slug);
-
+export function SinglePost({ post }: SinglePostProps) {
   return (
     <article className="mb-16">
       <header className="group flex flex-col gap-4 mb-4">
