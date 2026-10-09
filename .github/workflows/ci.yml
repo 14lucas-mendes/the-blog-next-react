@@ -19,18 +19,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      - name: Refresh security dependency lock
-        run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          npm audit fix --package-lock-only --ignore-scripts --no-fund || true
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dependency-lock
-          path: package-lock.json
       - run: npm ci
-      - name: Report production dependency advisories
-        run: npm audit --omit=dev --json > audit-report.json || test -s audit-report.json
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=moderate --json > audit-report.json
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: dependency-audit
           path: audit-report.json
