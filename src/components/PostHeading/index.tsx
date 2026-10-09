@@ -14,9 +14,10 @@ export function PostHeading({ children, url, as: Tag }: PostHeadingProps) {
 
   return (
     <Tag className={headingClassesMap[Tag]}>
-      <Link className="hover:text-slate-600 transition" href={url}>
+      <Link className="hover:text-slate-600 dark:hover:text-slate-300 transition" href={url}>
         {children}
       </Link>
     </Tag>
   );
 }
+

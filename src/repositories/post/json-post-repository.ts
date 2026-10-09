@@ -1,61 +1,37 @@
-import { PostModel } from "@/models/post/post-model";
-import { PostRepository } from "./post-repository";
-import { resolve } from "path";
-import { readFile } from "fs/promises";
+import type { PostModel, PostSummaryModel } from "@/models/post/post-model";
+import type { PostRepository, PublicPostPagination } from "./post-repository";
+import { resolve } from "node:path";
+import { readFile } from "node:fs/promises";
 
-const ROOT_DIR = process.cwd();
-const JSON_POSTS_FILE_PATH = resolve(
-  ROOT_DIR,
-  "src",
-  "db",
-  "seed",
-  "posts.json"
-);
-const SIMULATE_WAIT_IN_MS = 0;
+const postsFilePath = resolve(process.cwd(), "src/db/seed/posts.json");
 
 export class JsonPostRepository implements PostRepository {
-  private async simulateWait() {
-    if (SIMULATE_WAIT_IN_MS <= 0) return;
-
-    await new Promise((resolve) => setTimeout(resolve, SIMULATE_WAIT_IN_MS));
-  }
-
   private async readFromDisk(): Promise<PostModel[]> {
-    const jsonContent = await readFile(JSON_POSTS_FILE_PATH, "utf-8");
-    const parsedJson = JSON.parse(jsonContent);
-    const { posts } = parsedJson;
+    const { posts } = JSON.parse(await readFile(postsFilePath, "utf8")) as { posts: PostModel[] };
     return posts;
   }
 
-  async findAllPublic(): Promise<PostModel[]> {
-    await this.simulateWait();
-
-    const posts = await this.readFromDisk();
-    return posts.filter((post) => post.published);
+  async findAllPublic({ limit, offset = 0 }: PublicPostPagination = {}): Promise<PostSummaryModel[]> {
+    const posts = (await this.findAll()).filter((post) => post.published);
+    return posts.slice(offset, limit === undefined ? undefined : offset + limit).map((post) => ({
+      id: post.id, title: post.title, slug: post.slug, excerpt: post.excerpt,
+      coverImageUrl: post.coverImageUrl, published: post.published,
+      createdAt: post.createdAt, updatedAt: post.updatedAt, author: post.author,
+    }));
   }
 
   async findAll(): Promise<PostModel[]> {
-    await this.simulateWait();
-
-    const posts = await this.readFromDisk();
-    return posts;
+    return (await this.readFromDisk()).sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id),
+    );
   }
 
-  async findById(id: string): Promise<PostModel> {
-    const posts = await this.findAllPublic();
-    const post = posts.find((post) => post.id === id);
-
-    if (!post) throw new Error("Post não encontrado para ID");
-
-    return post;
+  async findById(id: string): Promise<PostModel | undefined> {
+    return (await this.findAll()).find((post) => post.id === id);
   }
 
-  async findBySlugPublic(slug: string): Promise<PostModel> {
-    const posts = await this.findAllPublic();
-    const post = posts.find((post) => post.slug === slug);
-
-    if (!post) throw new Error("Post não encontrado para rota selecionada");
-
-    return post;
+  async findBySlugPublic(slug: string): Promise<PostModel | undefined> {
+    return (await this.findAll()).find((post) => post.published && post.slug === slug);
   }
 }
+

@@ -1,8 +1,11 @@
-import { PostModel } from "@/models/post/post-model";
+import type { PostModel, PostSummaryModel } from "@/models/post/post-model";
+
+export type PublicPostPagination = { limit?: number; offset?: number };
 
 export interface PostRepository {
-  findAllPublic(): Promise<PostModel[]>;
+  findAllPublic(pagination?: PublicPostPagination): Promise<PostSummaryModel[]>;
   findAll(): Promise<PostModel[]>;
-  findById(id: string): Promise<PostModel>;
-  findBySlugPublic(slug: string): Promise<PostModel>;
+  findById(id: string): Promise<PostModel | undefined>;
+  findBySlugPublic(slug: string): Promise<PostModel | undefined>;
 }
+

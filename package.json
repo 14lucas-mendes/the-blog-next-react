@@ -6,16 +6,22 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import ./scripts/register-typescript.mjs --test tests/*.test.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --import ./scripts/register-typescript.mjs src/db/drizzle/migrate.ts",
+    "db:seed": "node --import ./scripts/register-typescript.mjs src/db/drizzle/seed.ts",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^12.4.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "drizzle-orm": "^0.44.5",
-    "next": "15.5.0",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "drizzle-orm": "0.45.4",
+    "next": "15.5.27",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "react-markdown": "^10.1.0",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1"
@@ -30,8 +36,15 @@
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.4",
     "eslint": "^9",
-    "eslint-config-next": "15.5.0",
+    "eslint-config-next": "15.5.27",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "^8.5.23",
+    "sharp": "^0.35.5"
+  },
+  "engines": {
+    "node": "^22.15.0 || ^24.0.0"
   }
 }

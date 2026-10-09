@@ -1,22 +1,22 @@
-import { findPostBySlugCached } from "@/lib/post/queries";
+import type { PostModel } from "@/models/post/post-model";
 import Image from "next/image";
 import { PostHeading } from "../PostHeading";
 import { PostDate } from "../PostDate";
 import { SafeMarkdown } from "../SafeMarkdown";
 
 type SinglePostProps = {
-  slug: string;
+  post: PostModel;
 };
 
-export async function SinglePost({ slug }: SinglePostProps) {
-  const post = await findPostBySlugCached(slug);
-
+export function SinglePost({ post }: SinglePostProps) {
   return (
     <article className="mb-16">
       <header className="group flex flex-col gap-4 mb-4">
         <Image
-          className="rounded-xl"
+          className="rounded-xl w-full h-auto"
           src={post.coverImageUrl}
+          priority
+          sizes="(min-width: 1024px) 960px, 100vw"
           width={1200}
           height={720}
           alt={post.title}
@@ -28,10 +28,11 @@ export async function SinglePost({ slug }: SinglePostProps) {
         <p>{post.author} | <PostDate dateTime={post.createdAt} /> </p>
       </header>
 
-      <p className="text-xl mb-4 text-slate-600">{post.excerpt}</p>
+      <p className="text-xl mb-4 text-slate-600 dark:text-slate-400">{post.excerpt}</p>
 
       <SafeMarkdown markdown={post.content} />
       
     </article>
   );
 }
+
